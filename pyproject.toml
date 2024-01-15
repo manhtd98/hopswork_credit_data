@@ -1,0 +1,16 @@
+[tool.poetry]
+name = "hopswork-pipeline"
+version = "0.1.0"
+description = ""
+authors = ["manhtd98 <manhtd6932@seta-international.vn>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+scikit-learn = "^1.3.2"
+streamlit = "^1.30.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
