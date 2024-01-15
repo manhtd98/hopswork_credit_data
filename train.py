@@ -29,23 +29,7 @@ def training_model(X_train, X_test, y_train, y_test):
     return xgboost_model, score
 
 
-def save_best_model(project, xgboost_model, score, input_schema, output_schema):
-    if os.path.isdir(CONFIG.MODEL_DIR) == False:
-        os.mkdir(CONFIG.MODEL_DIR)
-
-    mr = project.get_model_registry()
-    # Creating a model schema
-    model_schema = ModelSchema(input_schema=input_schema, output_schema=output_schema)
-    model = mr.python.create_model(
-        name=CONFIG.MODEL_NAME,
-        metrics={"f1_score": score},
-        description="XGB for Credit Scores Project",
-        input_example=X_train.sample(),
-        model_schema=model_schema,
-    )
-
-    # Saving the trained XGBoost model as a joblib file in the model directory
-    joblib.dump(xgboost_model, CONFIG.MODEL_DIR + "/credit_scores_model.pkl")
+def plot_result():
     conf_matrix = confusion_matrix(
         y_test,
         xgboost_model.predict(X_test),
@@ -64,7 +48,24 @@ def save_best_model(project, xgboost_model, score, input_schema, output_schema):
     )
     figure_cm.figure.savefig(CONFIG.MODEL_DIR + "/confusion_matrix.png")
     figure_imp.figure.savefig(CONFIG.MODEL_DIR + "/feature_importance.png")
-    model.save(CONFIG.MODEL_DIR)
+
+
+def save_best_model(mr, xgboost_model, score, input_schema, output_schema):
+    if os.path.isdir(CONFIG.MODEL_DIR) == False:
+        os.mkdir(CONFIG.MODEL_DIR)
+    MODEL_PATH = CONFIG.MODEL_DIR + "/credit_scores_model.pkl"
+    # Creating a model schema
+    model_schema = ModelSchema(input_schema=input_schema, output_schema=output_schema)
+    model = mr.sklearn.create_model(
+        name=CONFIG.MODEL_NAME,
+        metrics={"f1_score": score},
+        version=1,
+        description="XGB for Credit Scores Project",
+        input_example=X_train.sample(),
+        model_schema=model_schema,
+    )
+    joblib.dump(xgboost_model, MODEL_PATH)
+    model.save(MODEL_PATH, await_registration=480, keep_original_files=False)
 
 
 if __name__ == "__main__":
@@ -75,7 +76,7 @@ if __name__ == "__main__":
         name=CONFIG.FEATURE_GROUP,
         version=1,
     )
-
+    mr = project.get_model_registry()
     # Retrieving the Label Encoder transformation function from Featuretools
 
     # Creating a dictionary of transformation functions, where each categorical column is associated with the Label Encoder
@@ -83,7 +84,7 @@ if __name__ == "__main__":
     feature_view = fs.get_or_create_feature_view(
         name=CONFIG.FEATURE_VIEW,
         version=1,
-        labels=["Rich_class"],
+        labels=["risk_bad"],
         query=query,
     )
     X_train, X_test, y_train, y_test = feature_view.train_test_split(
@@ -92,4 +93,4 @@ if __name__ == "__main__":
     xgboost_model, score = training_model(X_train, X_test, y_train, y_test)
     input_schema = Schema(X_train.values)
     output_schema = Schema(y_train)
-    save_best_model(project, xgboost_model, score, input_schema, output_schema)
+    save_best_model(mr, xgboost_model, score, input_schema, output_schema)
