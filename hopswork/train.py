@@ -15,7 +15,10 @@ from config import CONFIG
 import warnings
 
 warnings.filterwarnings("ignore")
-
+import hsfs
+connection = hsfs.connection()
+fs = connection.get_feature_store(name='seta1_featurestore')
+fg = fs.get_feature_group('credit_fg', version=1)
 
 def training_model(X_train, X_test, y_train, y_test):
     xgboost_model = xgb.XGBClassifier()
@@ -50,23 +53,6 @@ def plot_result():
     figure_imp.figure.savefig(CONFIG.MODEL_DIR + "/feature_importance.png")
 
 
-def save_best_model(mr, xgboost_model, score, input_schema, output_schema):
-    if os.path.isdir(CONFIG.MODEL_DIR) == False:
-        os.mkdir(CONFIG.MODEL_DIR)
-    MODEL_PATH = CONFIG.MODEL_DIR + "/credit_scores_model.pkl"
-    # Creating a model schema
-    model_schema = ModelSchema(input_schema=input_schema, output_schema=output_schema)
-    model = mr.sklearn.create_model(
-        name=CONFIG.MODEL_NAME,
-        metrics={"f1_score": score},
-        version=1,
-        description="XGB for Credit Scores Project",
-        input_example=X_train.sample(),
-        model_schema=model_schema,
-    )
-    joblib.dump(xgboost_model, MODEL_PATH)
-    model.save(MODEL_PATH, await_registration=480, keep_original_files=False)
-
 
 if __name__ == "__main__":
     project = hopsworks.login()
@@ -91,6 +77,20 @@ if __name__ == "__main__":
         test_size=0.2,
     )
     xgboost_model, score = training_model(X_train, X_test, y_train, y_test)
+    if os.path.isdir(CONFIG.MODEL_DIR) == False:
+        os.mkdir(CONFIG.MODEL_DIR)
+    MODEL_PATH = CONFIG.MODEL_DIR + "/credit_scores_model.json"
+    xgboost_model.save_model(MODEL_PATH)
     input_schema = Schema(X_train.values)
     output_schema = Schema(y_train)
-    save_best_model(mr, xgboost_model, score, input_schema, output_schema)
+    model_schema = ModelSchema(input_schema=input_schema, output_schema=output_schema)
+    fraud_model = mr.python.create_model(
+        name="xgboost1",
+        # metrics={"f1_score": score},
+        # version=1,
+        # description="XGB for Credit Scores Project",
+        # input_example=X_train.sample(),
+        # model_schema=model_schema,
+    )    
+    
+    fraud_model.save(CONFIG.MODEL_DIR)

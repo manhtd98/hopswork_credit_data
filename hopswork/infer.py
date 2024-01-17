@@ -5,7 +5,7 @@ from config import CONFIG
 
 def load_model(mr):
     retrieved_model = mr.get_model(
-        name=CONFIG.MODEL_NAME,
+        name="xgboost1",
         version=1,
     )
 

@@ -3,4 +3,4 @@ class CONFIG:
     MODEL_DIR = "credit_classification_model"
     MODEL_NAME = "credit_model_model"
     FEATURE_VIEW = "credit_feature_view"
-    FEATURE_GROUP = "applications"
+    FEATURE_GROUP = "credit_applications"
