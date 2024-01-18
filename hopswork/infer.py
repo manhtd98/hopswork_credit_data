@@ -5,12 +5,12 @@ from config import CONFIG
 
 def load_model(mr):
     retrieved_model = mr.get_model(
-        name="xgboost1",
+        name="xgboostpkl",
         version=1,
     )
 
     saved_model_dir = retrieved_model.download()
-    retrieved_xgboost_model = joblib.load(saved_model_dir + "/credit_scores_model.pkl")
+    retrieved_xgboost_model = joblib.load(saved_model_dir + "/model.pkl")
     return retrieved_xgboost_model
 
 
@@ -26,3 +26,4 @@ if __name__ == "__main__":
     feature_view.init_batch_scoring(1)
     batch_data = feature_view.get_batch_data()
     predictions = retrieved_xgboost_model.predict(batch_data)
+    print(predictions)

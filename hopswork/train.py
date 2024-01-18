@@ -15,10 +15,6 @@ from config import CONFIG
 import warnings
 
 warnings.filterwarnings("ignore")
-import hsfs
-connection = hsfs.connection()
-fs = connection.get_feature_store(name='seta1_featurestore')
-fg = fs.get_feature_group('credit_fg', version=1)
 
 def training_model(X_train, X_test, y_train, y_test):
     xgboost_model = xgb.XGBClassifier()
@@ -79,18 +75,18 @@ if __name__ == "__main__":
     xgboost_model, score = training_model(X_train, X_test, y_train, y_test)
     if os.path.isdir(CONFIG.MODEL_DIR) == False:
         os.mkdir(CONFIG.MODEL_DIR)
-    MODEL_PATH = CONFIG.MODEL_DIR + "/credit_scores_model.json"
-    xgboost_model.save_model(MODEL_PATH)
+    MODEL_PATH = CONFIG.MODEL_DIR + "/model.pkl"
+    joblib.dump(xgboost_model, MODEL_PATH)
     input_schema = Schema(X_train.values)
     output_schema = Schema(y_train)
     model_schema = ModelSchema(input_schema=input_schema, output_schema=output_schema)
-    fraud_model = mr.python.create_model(
-        name="xgboost1",
-        # metrics={"f1_score": score},
-        # version=1,
-        # description="XGB for Credit Scores Project",
-        # input_example=X_train.sample(),
-        # model_schema=model_schema,
+    fraud_model = mr.sklearn.create_model(
+        name="xgboostpkl",
+        metrics={"f1_score": score},
+        version=1,
+        description="XGB for Credit Scores Project",
+        input_example=X_train.sample(),
+        model_schema=model_schema,
     )    
     
-    fraud_model.save(CONFIG.MODEL_DIR)
+    fraud_model.save(MODEL_PATH)
